@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_macros.html" import sev, ip, alert_table %}
+{% block title %}Overview{% endblock %}
+{% block content %}
+<div class="head-row">
+  <h1>Overview</h1>
+  <div class="ranges">
+    {% for k in RANGES %}<a href="{{ url_for('overview', range=k) }}" class="{{ 'on' if k == range_key }}">{{ k }}</a>{% endfor %}
+  </div>
+</div>
+
+<section class="kpis">
+  <div class="kpi"><div class="label">Open alerts</div><div class="value {{ 'hot' if stats.alerts_open }}">{{ stats.alerts_open }}</div></div>
+  <div class="kpi"><div class="label">Alerts in range</div><div class="value">{{ stats.alerts_window }}</div></div>
+  <div class="kpi"><div class="label">Events in range</div><div class="value">{{ "{:,}".format(stats.events_window) }}</div></div>
+  <div class="kpi"><div class="label">Last event</div><div class="value small-value">{{ latest|ago }}</div></div>
+</section>
+
+<section class="card">
+  <div class="card-head"><h2>Activity</h2>
+    <span class="legend"><i class="sw sw-ev"></i>events <i class="sw sw-al"></i>alerts</span></div>
+  <div class="chart" role="img" aria-label="Events and alerts over time">
+    {% for b in timeline %}
+      <div class="bar" title="{{ b.start|ts('%b %d %H:%M') }} · {{ b.events }} events · {{ b.alerts }} alerts">
+        <div class="ev" style="height: {{ (b.events / peak * 100)|round(1) }}%"></div>
+        {% if b.alerts %}<div class="al-mark">{{ b.alerts }}</div>{% endif %}
+      </div>
+    {% endfor %}
+  </div>
+  <div class="axis"><span>{{ since|ts('%b %d %H:%M') }}</span><span>now</span></div>
+</section>
+
+<div class="cols">
+  <section class="card">
+    <div class="card-head"><h2>Open alerts by severity</h2></div>
+    {% set total = stats.by_severity.values()|sum or 1 %}
+    {% for s in ['critical', 'high', 'medium', 'low', 'info'] %}
+      {% set n = stats.by_severity.get(s, 0) %}
+      <a class="hbar" href="{{ url_for('alerts', severity=s, status='') }}">
+        <span class="hbar-label">{{ sev(s) }}</span>
+        <span class="hbar-track"><span class="hbar-fill fill-{{ s }}" style="width: {{ (n / total * 100)|round(1) }}%"></span></span>
+        <span class="hbar-n mono">{{ n }}</span>
+      </a>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Top attacker IPs</h2></div>
+    <table class="grid compact">
+      <thead><tr><th>IP</th><th>Worst</th><th class="num">Alerts</th></tr></thead>
+      <tbody>
+      {% for r in stats.top_attackers %}
+        <tr><td>{{ ip(r.src_ip) }}</td><td>{{ sev(r.sevs|worst) }}</td><td class="num mono">{{ r.alerts }}</td></tr>
+      {% else %}<tr><td colspan="3" class="empty">None in range</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Top rules</h2></div>
+    <table class="grid compact">
+      <tbody>
+      {% for r in stats.top_rules %}
+        <tr><td>{{ sev(r.severity) }}</td><td>{{ r.rule_name }}</td><td class="num mono">{{ r.n }}</td></tr>
+      {% else %}<tr><td class="empty">None in range</td></tr>{% endfor %}
+      </tbody>
+    </table>
+    <div class="card-head sub"><h2>Events by source</h2></div>
+    <div class="chips">
+      {% for r in stats.by_source %}<a class="chip" href="{{ url_for('events', source=r.source) }}">{{ r.source }} <b>{{ "{:,}".format(r.n) }}</b></a>{% else %}<span class="muted">none</span>{% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="card">
+  <div class="card-head"><h2>Latest alerts</h2><a href="{{ url_for('alerts') }}" class="small">All alerts →</a></div>
+  {{ alert_table(recent) }}
+</section>
+{% endblock %}

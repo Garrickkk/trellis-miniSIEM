@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import alert_table %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<div class="head-row"><h1>Alerts</h1><span class="muted">{{ alerts|length }} shown</span></div>
+
+<form class="filters" method="get">
+  <select name="status">
+    {% for s in ['', 'open', 'acknowledged', 'closed'] %}<option value="{{ s }}" {{ 'selected' if f.status == s }}>{{ s or 'any status' }}</option>{% endfor %}
+  </select>
+  <select name="severity">
+    {% for s in ['', 'critical', 'high', 'medium', 'low', 'info'] %}<option value="{{ s }}" {{ 'selected' if f.severity == s }}>{{ s or 'any severity' }}</option>{% endfor %}
+  </select>
+  <select name="rule_id">
+    <option value="">any rule</option>
+    {% for r in rules|sort(attribute='name') %}<option value="{{ r.id }}" {{ 'selected' if f.rule_id == r.id }}>{{ r.name }}</option>{% endfor %}
+  </select>
+  <button type="submit">Filter</button>
+</form>
+
+<section class="card flush">{{ alert_table(alerts) }}</section>
+{% endblock %}

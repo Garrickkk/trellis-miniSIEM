@@ -1,0 +1,11 @@
+Scanning web01 (10.0.0.10): 1024 port(s), concurrent, 100 threads
+
+PORT      STATE     SERVICE         VERSION
+22/tcp    open      ssh             OpenSSH 9.6p1 (protocol 2.0; Ubuntu-3ubuntu13)
+80/tcp    open      http            nginx 1.24.0 (Ubuntu)
+443/tcp   open      ssl/http        nginx 1.24.0 (Ubuntu; TLSv1.3)
+3306/tcp  open      mysql           MySQL 8.0.36
+4444/tcp  open      unknown
+6379/tcp  open      redis           Redis
+
+6 open, 1018 closed, 0 filtered - finished in 2.09s (port scan 0.08s, service detection 2.01s)

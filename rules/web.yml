@@ -1,0 +1,143 @@
+# Attacks against web servers (source: nginx / Apache access logs)
+# Rules match path_decoded, the URL-decoded path, so %27 counts as '.
+
+- id: web-sql-injection
+  name: SQL injection attempt
+  description: >
+    The request URL contains SQL syntax. A 200 response is worth checking
+    closely: it may mean the injection worked.
+  severity: high
+  mitre: [T1190]
+  type: match
+  where:
+    source: web
+    # Patterns match single OR double quotes. A trailing comment (-- or #)
+    # only counts right after a quote: otherwise searching for "C#" is SQLi.
+    path_decoded|regex:
+      - "union(\\s|/\\*.*\\*/)+(all\\s+)?select"
+      - "[\"']\\s*(or|and)\\s+[\"']?\\w+[\"']?\\s*=\\s*[\"']?\\w+"
+      - "\\b(or|and)\\s+(\\d+)\\s*=\\s*\\2\\b"
+      - "\\b(sleep|benchmark|pg_sleep)\\s*\\("
+      - "information_schema"
+      - "[\"']\\s*;\\s*(drop|insert|update|delete|select)\\s"
+      - "[\"')]\\s*(--|#)"
+  group_by: [src_ip]
+  suppress: 600
+
+- id: web-xss
+  name: Cross-site scripting attempt
+  description: The request tries to inject JavaScript into the page.
+  severity: medium
+  mitre: [T1190]
+  type: match
+  where:
+    source: web
+    path_decoded|regex:
+      - "<\\s*script"
+      - "javascript\\s*:"
+      - "\\bon(error|load|mouseover|focus)\\s*="
+      - "<\\s*(img|svg|iframe)[^>]*\\s(src|onload)"
+  group_by: [src_ip]
+  suppress: 600
+
+- id: web-path-traversal
+  name: Path traversal attempt
+  description: The request tries to escape the web root to read system files.
+  severity: high
+  mitre: [T1190, T1083]
+  type: match
+  where:
+    source: web
+    path_decoded|regex:
+      - "\\.\\./"
+      - "\\.\\.\\\\"
+      - "/etc/(passwd|shadow|hosts)"
+      - "(boot|win)\\.ini"
+  group_by: [src_ip]
+  suppress: 600
+
+- id: web-scanner-user-agent
+  name: Known scanning tool
+  description: >
+    The User-Agent identifies an attack or recon tool. Real attackers often
+    change it, so the absence of this alert proves nothing.
+  severity: medium
+  mitre: [T1595.002]
+  type: match
+  where:
+    source: web
+    user_agent|regex: "nikto|sqlmap|nmap|masscan|gobuster|dirbuster|dirb|wpscan|nuclei|zgrab|feroxbuster|ffuf|hydra|acunetix|nessus|openvas"
+  group_by: [src_ip]
+  suppress: 1800
+
+- id: web-404-flood
+  name: Directory brute forcing
+  description: >
+    One IP hitting many URLs that don't exist. Tools like gobuster guess
+    paths from a wordlist to find hidden admin pages and backups.
+  severity: medium
+  mitre: [T1595.003]
+  type: threshold
+  where:
+    source: web
+    status: 404
+  group_by: [src_ip]
+  distinct: path
+  threshold: 20
+  window: 60
+  suppress: 1800
+
+- id: web-sensitive-file-probe
+  name: Probe for sensitive files
+  description: >
+    Requests for files that should never be public: environment files with
+    secrets, git repositories, database dumps, admin panels.
+  severity: low
+  mitre: [T1595.003]
+  type: match
+  where:
+    source: web
+    path_decoded|regex:
+      - "/\\.env\\b"
+      - "/\\.git(/|$)"
+      - "wp-config\\.php"
+      - "/(phpmyadmin|pma|adminer)"
+      - "\\.(sql|bak|old|swp)$"
+      - "/server-status"
+  group_by: [src_ip]
+  suppress: 1800
+
+- id: web-login-brute-force
+  name: Web login brute force
+  description: Many rejected POSTs to a login page from one IP.
+  severity: high
+  mitre: [T1110]
+  type: threshold
+  where:
+    source: web
+    method: POST
+    path_decoded|regex: "login|signin|auth|wp-login"
+    status: [401, 403]
+  group_by: [src_ip]
+  threshold: 10
+  window: 120
+  suppress: 900
+
+# ---- correlation across sources -------------------------------------------
+
+- id: web-recon-then-ssh-login
+  name: Web recon followed by SSH login
+  description: >
+    The same IP scanned the website and later logged in over SSH. Each
+    alone might be noise; together they look like an attack moving from
+    reconnaissance to access. This only works because both log sources
+    land in one place, which is the point of a SIEM.
+  severity: critical
+  mitre: [T1595, T1078]
+  type: sequence
+  group_by: [src_ip]
+  window: 7200
+  steps:
+    - where: {source: web, status|gte: 400}
+      min_count: 10
+    - where: {event_type: ssh_login_success}

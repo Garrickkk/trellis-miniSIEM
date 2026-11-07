@@ -1,0 +1,30 @@
+# Network exposure changes (source: GrapeVine scan results)
+# Save a scan with:  python grapevine.py <target> > scans/<name>.txt
+# The first scan of each target is the baseline; later scans are compared to it.
+
+- id: new-open-port
+  name: New open port
+  description: >
+    A port is open that wasn't in earlier scans of this host. Could be a new
+    service someone forgot to tell you about, or a backdoor listener.
+  severity: medium
+  type: new_value
+  where:
+    event_type: port_open
+  fields: [target, port]
+  baseline_by: target      # first scan of each host is the baseline
+  baseline_batch: scan_id  # ...identified by scan, not by timestamp
+
+- id: risky-service-exposed
+  name: Risky service exposed
+  description: >
+    A service that should rarely be reachable from the network is open:
+    cleartext logins (Telnet, FTP), databases, or remote desktop.
+  severity: medium
+  type: match
+  where:
+    event_type: port_open
+    # names as GrapeVine's services.py reports them
+    service: [telnet, ftp, redis, mysql, postgresql, mongodb, ms-sql, oracle, ms-wbt-server, vnc, microsoft-ds, netbios-ssn, rpcbind]
+  group_by: [target, port]
+  suppress: 604800   # remind at most once a week per port

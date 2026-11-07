@@ -1,0 +1,32 @@
+{% macro sev(s) -%}<span class="sev sev-{{ s }}">{{ s }}</span>{%- endmacro %}
+
+{% macro status(s) -%}<span class="status st-{{ s }}">{{ s }}</span>{%- endmacro %}
+
+{% macro ip(addr) -%}
+  {%- if addr -%}<a class="mono ip" href="{{ url_for('events', src_ip=addr) }}" title="All events from {{ addr }}">{{ addr }}</a>{%- else -%}<span class="muted">-</span>{%- endif -%}
+{%- endmacro %}
+
+{% macro alert_table(alerts, show_status=true) %}
+<table class="grid">
+  <thead><tr>
+    <th>Severity</th><th>Alert</th><th>Source IP</th><th>User / Host</th>
+    <th class="num">Events</th><th>Last seen</th>{% if show_status %}<th>Status</th>{% endif %}
+  </tr></thead>
+  <tbody>
+  {% for a in alerts %}
+    <tr class="row-link" onclick="location.href='{{ url_for('alert_detail', alert_id=a.id) }}'">
+      <td>{{ sev(a.severity) }}</td>
+      <td><a href="{{ url_for('alert_detail', alert_id=a.id) }}">{{ a.rule_name }}</a>
+          <span class="muted small">#{{ a.id }}</span></td>
+      <td>{{ ip(a.src_ip) }}</td>
+      <td class="mono small">{{ a.user or a.host or '-' }}</td>
+      <td class="num mono">{{ a.event_count }}</td>
+      <td title="{{ a.last_seen|ts }}">{{ a.last_seen|ago }}</td>
+      {% if show_status %}<td>{{ status(a.status) }}</td>{% endif %}
+    </tr>
+  {% else %}
+    <tr><td colspan="7" class="empty">No alerts. Either nothing happened, or nothing's been ingested yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_macros.html" import sev, status, ip, alert_table %}
+{% block title %}#{{ alert.id }} {{ alert.rule_name }}{% endblock %}
+{% block content %}
+<a href="{{ url_for('alerts') }}" class="back small">← Alerts</a>
+<div class="head-row">
+  <h1>{{ sev(alert.severity) }} {{ alert.rule_name }} <span class="muted">#{{ alert.id }}</span></h1>
+  <form method="post" action="{{ url_for('set_status', alert_id=alert.id) }}" class="status-form">
+    {{ status(alert.status) }}
+    {% for s, label in [('acknowledged', 'Acknowledge'), ('closed', 'Close'), ('open', 'Reopen')] if s != alert.status %}
+      <button name="status" value="{{ s }}" class="{{ 'primary' if loop.first }}">{{ label }}</button>
+    {% endfor %}
+  </form>
+</div>
+
+<div class="cols two">
+  <section class="card">
+    <div class="card-head"><h2>What happened</h2></div>
+    <p class="desc">{{ alert.description or 'No description.' }}</p>
+    <dl class="facts">
+      <dt>Source IP</dt><dd>{{ ip(alert.src_ip) }}</dd>
+      <dt>User</dt><dd class="mono">{{ alert.user or '-' }}</dd>
+      <dt>Host</dt><dd class="mono">{{ alert.host or '-' }}</dd>
+      <dt>First seen</dt><dd>{{ alert.first_seen|ts }}</dd>
+      <dt>Last seen</dt><dd>{{ alert.last_seen|ts }} <span class="muted">({{ alert.last_seen|ago }})</span></dd>
+      <dt>Events</dt><dd class="mono">{{ alert.event_count }}</dd>
+      <dt>Rule</dt><dd class="mono">{{ alert.rule_id }}{% if rule %} <span class="muted">({{ rule.type }})</span>{% endif %}</dd>
+      {% if alert.mitre %}
+      <dt>MITRE ATT&amp;CK</dt><dd>{% for t in alert.mitre.split(',') %}<a class="chip" href="{{ t|mitre_url }}" target="_blank" rel="noopener">{{ t }}</a>{% endfor %}</dd>
+      {% endif %}
+    </dl>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h2>Other alerts from this IP</h2></div>
+    {% if others %}
+      <table class="grid compact"><tbody>
+      {% for o in others %}
+        <tr><td>{{ sev(o.severity) }}</td><td><a href="{{ url_for('alert_detail', alert_id=o.id) }}">{{ o.rule_name }}</a></td><td class="small">{{ o.last_seen|ago }}</td></tr>
+      {% endfor %}
+      </tbody></table>
+    {% else %}<p class="muted">None.</p>{% endif %}
+    {% if alert.src_ip %}<p><a href="{{ url_for('events', src_ip=alert.src_ip) }}">Every event from {{ alert.src_ip }} →</a></p>{% endif %}
+  </section>
+</div>
+
+<section class="card flush">
+  <div class="card-head pad"><h2>Evidence ({{ events|length }} events)</h2></div>
+  <table class="grid">
+    <thead><tr><th>Time</th><th>Type</th><th>Summary</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      <tr>
+        <td class="mono small nowrap">{{ e.ts_epoch|ts }}</td>
+        <td><span class="tag">{{ e.event_type }}</span></td>
+        <td>{{ e.message }}<div class="raw">{{ e.raw }}</div></td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

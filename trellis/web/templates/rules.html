@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import sev %}
+{% block title %}Rules{% endblock %}
+{% block content %}
+<div class="head-row"><h1>Detection rules</h1><span class="muted">{{ rules|length }} loaded from rules/</span></div>
+
+<section class="card flush">
+  <table class="grid">
+    <thead><tr><th>Severity</th><th>Rule</th><th>Type</th><th>Logic</th><th>MITRE</th><th class="num">Alerts</th></tr></thead>
+    <tbody>
+    {% for r in rules %}
+      <tr>
+        <td>{{ sev(r.severity) }}</td>
+        <td><a href="{{ url_for('alerts', rule_id=r.id, status='') }}">{{ r.name }}</a>
+            <div class="muted small mono">{{ r.id }}</div>
+            <div class="desc small">{{ r.description }}</div></td>
+        <td><span class="tag">{{ r.type }}</span></td>
+        <td class="small nowrap">
+          {% if r.type == 'threshold' %}≥ {{ r.threshold }} {{ 'distinct ' ~ r.distinct if r.distinct else 'events' }} in {{ r.window|int }}s
+          {% elif r.type == 'sequence' %}{{ r.steps|length }} steps in {{ r.window|int }}s
+          {% elif r.type == 'new_value' %}new {{ r.fields|join(' + ') }}
+          {% else %}single event{% endif %}
+          {% if r.group_by %}<div class="muted">per {{ r.group_by|join(', ') }}</div>{% endif %}
+        </td>
+        <td>{% for t in r.mitre %}<a class="chip" href="{{ t|mitre_url }}" target="_blank" rel="noopener">{{ t }}</a>{% endfor %}</td>
+        <td class="num mono">{{ counts.get(r.id, 0) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

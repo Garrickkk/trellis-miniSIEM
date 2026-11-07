@@ -1,0 +1,80 @@
+# Privilege escalation and persistence on Linux hosts (source: auth.log)
+
+- id: sudo-root-shell
+  name: Root shell via sudo
+  description: >
+    A user opened an interactive root shell with sudo. Legitimate admins do
+    this, but it also hides what happens next: commands inside the shell
+    aren't logged individually.
+  severity: medium
+  mitre: [T1548.003]
+  type: match
+  where:
+    event_type: sudo_command
+    command|regex: '(^|/)(ba|z|da|k|c|fi)?sh( -i| -l)?$|(^|/)su( -| -l)?( root)?$'
+  group_by: [user]
+  suppress: 300
+
+- id: sudo-suspicious-command
+  name: Suspicious command run with sudo
+  description: >
+    sudo was used for something attackers commonly do after gaining access:
+    piping a download into a shell, reading password hashes, setting SUID
+    bits, or opening a reverse shell.
+  severity: high
+  mitre: [T1059.004, T1548.001]
+  type: match
+  where:
+    event_type: sudo_command
+    command|regex:
+      - '(curl|wget)\s.*\|\s*(ba)?sh'
+      - '/etc/shadow'
+      - 'chmod\s+([ugo]*\+s|[0-7]?[4-7][0-7]{3})'
+      - '\bnc(at)?\b.*\s-[a-z]*e'
+      - 'base64\s+(-d|--decode)'
+      - '/dev/tcp/'
+
+- id: sudo-password-failures
+  name: Repeated sudo password failures
+  description: >
+    Several wrong sudo passwords for the same user. Could be a typo streak,
+    or someone with access to a user's session trying to escalate.
+  severity: medium
+  mitre: [T1548.003]
+  type: threshold
+  where:
+    event_type: sudo_auth_failure
+  group_by: [user]
+  threshold: 3
+  window: 300
+
+- id: sudo-not-allowed
+  name: Unauthorized sudo attempt
+  description: A user who isn't allowed to use sudo tried to.
+  severity: medium
+  mitre: [T1548.003]
+  type: match
+  where:
+    event_type: sudo_not_allowed
+  group_by: [user]
+
+- id: local-user-created
+  name: New local user account
+  description: >
+    A new account was created. Attackers add accounts for persistence; check
+    this matches a planned change.
+  severity: medium
+  mitre: [T1136.001]
+  type: match
+  where:
+    event_type: user_created
+
+- id: user-added-to-admin-group
+  name: User added to admin group
+  description: An account gained sudo/admin rights by joining a privileged group.
+  severity: high
+  mitre: [T1098]
+  type: match
+  where:
+    event_type: group_member_added
+    group: [sudo, wheel, admin, root, adm]

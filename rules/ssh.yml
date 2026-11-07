@@ -1,0 +1,62 @@
+# SSH authentication attacks (source: /var/log/auth.log)
+
+- id: ssh-brute-force
+  name: SSH brute force
+  description: >
+    Many failed SSH logins from one IP in a short time. Usually an automated
+    password-guessing tool such as Hydra, or an internet-wide bot.
+  severity: high
+  mitre: [T1110.001]
+  type: threshold
+  where:
+    event_type: ssh_failed_login
+  group_by: [src_ip]
+  threshold: 5
+  window: 60
+  suppress: 900
+
+- id: ssh-password-spray
+  name: SSH password spraying
+  description: >
+    One IP trying many different usernames. Spraying tries a few common
+    passwords against lots of accounts to avoid per-account lockouts.
+  severity: high
+  mitre: [T1110.003]
+  type: threshold
+  where:
+    event_type: [ssh_failed_login, ssh_invalid_user]
+  group_by: [src_ip]
+  distinct: user
+  threshold: 5
+  window: 300
+  suppress: 900
+
+- id: ssh-brute-force-success
+  name: Successful SSH login after brute force
+  description: >
+    An IP that just failed repeatedly then logged in successfully. The
+    attacker probably guessed a valid password. Treat the account as
+    compromised until proven otherwise.
+  severity: critical
+  mitre: [T1110, T1078]
+  type: sequence
+  group_by: [src_ip]
+  window: 900
+  steps:
+    - where: {event_type: ssh_failed_login}
+      min_count: 5
+    - where: {event_type: ssh_login_success}
+
+- id: ssh-root-login
+  name: Direct root login over SSH
+  description: >
+    Someone logged in as root directly. Best practice is PermitRootLogin no
+    and logging in as a normal user, then using sudo, so actions are
+    attributable to a person.
+  severity: high
+  mitre: [T1078.003]
+  type: match
+  where:
+    event_type: ssh_login_success
+    user: root
+  group_by: [src_ip]

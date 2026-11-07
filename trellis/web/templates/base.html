@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}trellis{% endblock %} · trellis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="{{ url_for('overview') }}"><span class="dot"></span>trellis</a>
+  <nav>
+    {% set ep = request.endpoint %}
+    <a href="{{ url_for('overview', range=range_key) }}" class="{{ 'on' if ep == 'overview' }}">Overview</a>
+    <a href="{{ url_for('alerts') }}" class="{{ 'on' if ep in ('alerts', 'alert_detail') }}">Alerts</a>
+    <a href="{{ url_for('events') }}" class="{{ 'on' if ep == 'events' }}">Events</a>
+    <a href="{{ url_for('rules_page') }}" class="{{ 'on' if ep == 'rules_page' }}">Rules</a>
+  </nav>
+  <label class="live" title="Reload this page every 10 seconds">
+    <input type="checkbox" id="live"> Live
+  </label>
+</header>
+<main>
+  {% block content %}{% endblock %}
+</main>
+<script>
+  // Live mode: reload every 10 s, remembered per browser
+  (function () {
+    const box = document.getElementById("live");
+    let on = false;
+    try { on = localStorage.getItem("trellis-live") === "1"; } catch (e) {}
+    box.checked = on;
+    let timer = on ? setTimeout(() => location.reload(), 10000) : null;
+    box.addEventListener("change", () => {
+      try { localStorage.setItem("trellis-live", box.checked ? "1" : "0"); } catch (e) {}
+      clearTimeout(timer);
+      if (box.checked) timer = setTimeout(() => location.reload(), 10000);
+    });
+  })();
+</script>
+</body>
+</html>
