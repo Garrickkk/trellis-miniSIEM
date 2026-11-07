@@ -270,7 +270,7 @@ class WebAccessLogParser:
 
 
 # --------------------------------------------------------------------------
-# GrapeVine scan results (github.com/Garrickkk/GrapeVine)
+# GrapeVine scan results (github.com/Garrickkk/grapevine-scanner)
 # --------------------------------------------------------------------------
 
 GV_HEADER = re.compile(r"^Scanning (?P<target>\S+?)(?: \((?P<ip>[^)]+)\))?: \d+ port")
