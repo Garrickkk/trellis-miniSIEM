@@ -1,6 +1,6 @@
-# Trellis
+# trellis
 
-A small SIEM written in Python. It reads SSH, web server and
+A small SIEM written in Python. It reads SSH, web server, and
 [grapevine-scanner](https://github.com/Garrickkk/grapevine-scanner) scan logs, normalizes them
 into one event format, correlates them with detection rules, and shows alerts
 on a web dashboard.
